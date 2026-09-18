@@ -24,4 +24,10 @@ This script also calculates and visualizes that ratio of the haplogroup frequenc
 
 4) Identification of candidate variants
 
+candidate_variants.R relates variants in the QTL that differ between the B6 and B7 haplotypes to their predicted effects from variant effect predictor. It requires the following input files:
+
+VEP.csv
+genos.annotated.curated.csv
+split.filtered.B6neB7.vcf
+
 5) RNAseq
