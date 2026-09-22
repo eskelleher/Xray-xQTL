@@ -1,1 +1,0 @@
-the three files in this folder contain estimated haplotype frequencies for all founders and all genomic windows. They were calculate with three different window sizes, 200 Kb, 500 Kb and 1 Mb.
