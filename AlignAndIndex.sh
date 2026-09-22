@@ -7,7 +7,7 @@
 #SBATCH -n 32
 #SBATCH -t 72:00:00 
 #SBATCH --mail-type=END
-#SBATCH --mail-user=lgreen7@cougarnet.uh.edu 
+ 
 
 #load the tools
 module load BWA
