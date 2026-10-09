@@ -11,6 +11,8 @@ AlignAndIndex.sh takes fastq reads and aligns them to the dm6 references, sorts 
 
 callSNP.sh estimates the allele frequency and read counts in all samples for all SNPs. It requires bam files of all samples as well as the DSPR founders, aligned to the same references (we used dm6) as input. It requires bcftools to run, as well as two perl scripts accuracy.freqtab.pl and accuracy.counttab.pl. These scripts are available from the original DSPR xQTL GitHub: https://github.com/tdlong/fly_XQTL
 
+Granny-test.R was provided to us by Tony Long, but we have annotated the script. It performs quality control on the SNP calls by retaining only those SNPs that 1) can be genotyped in all founders and 2) have low heterozygosity in all the founders. Even your granny would believe that these are SNPs.
+
 # 2) Haplotype frequency estimates
 
 # 3) QTL mapping and haplotype phasing
@@ -26,12 +28,14 @@ LOD_haplogroup.R this script offers two important modifications to standard QTL 
 This script also calculates and visualizes that ratio of the haplogroup frequency in replicate experimental and control populations to isolate haplogroups that increase or decrease as a consequence of artificial selection. It investigates how robust the LOD peak is to the removal of particular haplogroups from the data, thereby showing which are most important for driving the LOD peak. 
 
 
-4) Identification of candidate variants
+# 4) Identification of candidate variants
 
-candidate_variants.R relates variants in the QTL that differ between the B6 and B7 haplotypes to their predicted effects from variant effect predictor. It requires the following input files:
+variants.R relates variants in the QTL that differ between the B6 and B7 haplotypes to their predicted effects from variant effect predictor. It requires the following input files:
 
 VEP.csv
 genos.annotated.curated.csv
 split.filtered.B6neB7.vcf
 
-5) RNAseq
+# 5) RNAseq
+
+haplotype_map_pairs.R visualizes the haplotype relationships between RIL pairs selected for RNA-seq. It requires HMM genotypes from the DSPR RILs (King et. al 2012, Genome Research) as an input.
