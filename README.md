@@ -7,6 +7,10 @@ xQTL analysis in the DSPR involves three major stages: 1) SNPs calling and QC,  
 
 # 1) SNP calls and QC
 
+AlignAndIndex.sh takes fastq reads and aligns them to the dm6 references, sorts and indexes the alignments. The script is shown with file names for the first control samples, you will need to modify the file names as necessary for other samples. 
+
+callSNP.sh estimates the allele frequency and read counts in all samples for all SNPs. It requires bam files of all samples as well as the DSPR founders, aligned to the same references (we used dm6) as input. It requires bcftools to run, as well as two perl scripts accuracy.freqtab.pl and accuracy.counttab.pl. These scripts are available from the original DSPR xQTL GitHub: https://github.com/tdlong/fly_XQTL
+
 # 2) Haplotype frequency estimates
 
 # 3) QTL mapping and haplotype phasing
