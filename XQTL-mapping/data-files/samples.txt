@@ -1,0 +1,8 @@
+A.C	Cont1
+B.C	Cont2
+C.C	Cont3
+D.C	Cont4
+A.T	Dose1
+B.T	Dose2
+C.T	Dose3
+D.T	Dose4
