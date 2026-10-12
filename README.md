@@ -15,6 +15,13 @@ Granny-test.R was provided to us by Tony Long, but we have annotated the script.
 
 # 2) Haplotype frequency estimates
 
+haplotyper.justthehapfreq.slurm.sh, haplotyper.justhapfreq2.R, haplotyper.justhapfreq.code.R were obtained from the original DSPR QTL GitHub repository https://github.com/tdlong/fly_XQTL
+ The first two scripts and slurm and R wrapper for the third script (“…code.R”), which uses limSolve to estimate the haplotype frequencies of all 8 founders in genomic windows of a specified size in all the pooled experimental samples. These nested scripts require 3 input files:
+
+samples.txt (tab-delimited list of sample abbreviations and preferred output file names),  ff1.txt (table delimited file of founder sample names) and SNP.accuracy.freqXrayF.txt (QF filtered SNPs from Granny_SNP.R). The SNP file is very large, hence we only provide a truncated sample file in the repository. 
+
+The output of these nested scripts are individual haplotype files, which we compiled into the single combined files “all haps.*.txt” These are used as input for QTL mapping section. 
+
 # 3) QTL mapping and haplotype phasing
 
 LOD.R this script calculates LOD scores throughout the genome based on the following linear model: 
