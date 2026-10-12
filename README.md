@@ -42,6 +42,7 @@ variants.R relates variants in the QTL that differ between the B6 and B7 haploty
 VEP.csv
 genos.annotated.curated.csv
 split.filtered.B6neB7.vcf
+QTL_expression.txt
 
 # 5) RNAseq
 
