@@ -1,0 +1,37 @@
+,Replicate,Background ,Allele,Time 
+line96093_R1_0hr,1,red,tolerant ,0
+line96093_R3_0hr,3,red,tolerant ,0
+line96197_R2_0hr,2,red,sensitive,0
+line96943_R1_0hr,1,blue,tolerant ,0
+line96943_R3_0hr,3,blue,tolerant ,0
+line96977_R2_0hr,2,blue ,sensitive,0
+line96093_R1_1hr,1,red,tolerant ,1
+line96093_R3_1hr,3,red,tolerant ,1
+line96197_R2_1hr,2,red,sensitive,1
+line96943_R1_1hr,1,blue,tolerant ,1
+line96943_R3_1hr,3,blue,tolerant ,1
+line96977_R2_1hr,2,blue ,sensitive,1
+line96093_R1_4hr,1,red,tolerant ,4
+line96093_R3_4hr,3,red,tolerant ,4
+line96197_R2_4hr,2,red,sensitive,4
+line96943_R1_4hr,1,blue,tolerant ,4
+line96943_R3_4hr,3,blue,tolerant ,4
+line96977_R2_4hr,2,blue ,sensitive,4
+line96093_R2_0hr,2,red,tolerant ,0
+line96197_R1_0hr,1,red,sensitive,0
+line96197_R3_0hr,3,red,sensitive,0
+line96943_R2_0hr,2,blue,tolerant ,0
+line96977_R1_0hr,1,blue ,sensitive,0
+line96977_R3_0hr,3,blue ,sensitive,0
+line96093_R2_1hr,2,red,tolerant ,1
+line96197_R1_1hr,1,red,sensitive,1
+line96197_R3_1hr,3,red,sensitive,1
+line96943_R2_1hr,2,blue,tolerant ,1
+line96977_R1_1hr,1,blue ,sensitive,1
+line96977_R3_1hr,3,blue ,sensitive,1
+line96093_R2_4hr,2,red,tolerant ,4
+line96197_R1_4hr,1,red,sensitive,4
+line96197_R3_4hr,3,red,sensitive,4
+line96943_R2_4h,2,blue,tolerant ,4
+line96977_R1_4hr,1,blue ,sensitive,4
+line96977_R3_4hr,3,blue ,sensitive,4
