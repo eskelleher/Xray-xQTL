@@ -46,4 +46,8 @@ QTL_expression.txt
 
 # 5) RNAseq
 
+Input files for DESeq and WGCNA analyses of gene expression are in the RNA-seq/data/WGCNA folder. These files quantify transcript abundance for all samples generated through kallisto alignment to the dm6 transcriptome. They are required to run the DESeq.R and WGCNA.R scripts. The WGCNA.R script also requires FLYBASE-tx2gn-FULL.csv (relates transcript counts to gene counts) and gene_expression_dataframe.csv (metadata for expression analyses.
+
+Input files for GO analyses are in RNA-seq/data/GO analysis. These are lists of genes in QTL containing modules that can be analyzed for GO enrichment using GO_enrichment.R
+
 haplotype_map_pairs.R visualizes the haplotype relationships between RIL pairs selected for RNA-seq. It requires HMM genotypes from the DSPR RILs (King et. al 2012, Genome Research) as an input.
