@@ -828,19 +828,28 @@ colnames(coef(fit))
 
 # Extract results for individual model coefficients.
 # Each result includes the estimated effect, moderated test statistic, raw P value, and Benjamini-Hochberg adjusted P value.
-# Background (pair)
-background <- limma::topTable(
+# Allele:Time 
+AllelexTime1 <- limma::topTable(
   fit,
   number = ncol(module_eigengenes),
-  coef = 2 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+  coef = 9 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
 ) %>%
   tibble::rownames_to_column(
     "module"
   )
 
-background
+AllelexTime1
 
-# Evaluate interaction terms in the full model.
+AllelexTime4 <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 10 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+AllelexTime4
 # Remove the Allele x Time interaction because it was not statistically significant.
 
 # Refit the model without the Allele x Time interaction.
@@ -853,7 +862,42 @@ des_mat <- model.matrix(
   data = colData
 )
 
+# Fit a linear model for each module eigengene.
+# Modules are rows and samples are columns, as required by lmFit().
+fit <- limma::lmFit(
+  t(module_eigengenes),
+  design = des_mat
+)
+
+
+# Apply empirical Bayes moderation to improve variance estimation across module eigengene expression profiles.
+fit <- limma::eBayes(fit)
+
+# Check coefficient names in the fitted model.
+colnames(coef(fit))
+
 # Evaluate the remaining interaction terms.
+BackgroundxTime1 <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 8 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+BackgroundxTime1
+
+BackgroundxTime4 <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 9 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+BackgroundxTime4
 # Remove the Background x Time interaction because it was not statistically significant.
 
 # Refit the model without the Background x Time interaction to have final model:
