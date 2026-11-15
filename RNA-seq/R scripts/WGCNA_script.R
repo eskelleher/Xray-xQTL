@@ -880,7 +880,7 @@ colnames(coef(fit))
 BackgroundxTime1 <- limma::topTable(
   fit,
   number = ncol(module_eigengenes),
-  coef = 8 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+  coef = 7 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
 ) %>%
   tibble::rownames_to_column(
     "module"
@@ -891,7 +891,7 @@ BackgroundxTime1
 BackgroundxTime4 <- limma::topTable(
   fit,
   number = ncol(module_eigengenes),
-  coef = 9 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+  coef = 8 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
 ) %>%
   tibble::rownames_to_column(
     "module"
