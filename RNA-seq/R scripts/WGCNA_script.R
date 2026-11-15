@@ -182,6 +182,8 @@ colnames(countData) <- gsub("4h$", "4hr", colnames(countData))
 rownames(colData) <- gsub("4h$", "4hr", rownames(colData))
 colData$Replicate <- factor(colData$Replicate)
 colData$Time <- factor(colData$Time)
+colData$Background <- factor(colData$Background)
+colData$Allele <- factor(colData$Allele)
 
 colData <- colData[colnames(countData), ]
 all(colnames(countData) == rownames(colData))
