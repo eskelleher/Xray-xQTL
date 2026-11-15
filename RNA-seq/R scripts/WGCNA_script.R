@@ -1,13 +1,11 @@
 #load packages
 library(tidyverse)
-library(DESeq2)
 library (ggplot2)
 library(readr)
 library(sva)
 library(WGCNA)
 library(flashClust)
-library(curl)
-library (dplyr)
+
 
 #Load Kallisto transcript-level abundance files for all samples at 0, 1, and 4 hours.
 # 0 hr
@@ -324,7 +322,7 @@ num.sv(
   mod,
   method = "leek"
 )
-#this suggests that there are no significant sources of unaccounted variation in the model
+# This suggests that there are no significant sources of unaccounted variation in the model
 
 
 mod <- model.matrix(
@@ -492,7 +490,140 @@ table(mergedColors_10000$colors)
 
 mergedColors_10000
 
+# Module eigengenes and gene-module correlations
+# Extract the module eigengenes calculated by WGCNA.
+MEs_10000 <- netwk_10000$MEs
 
+# Calculate signed KME for every gene against every module
+# Signed KME measures the correlation between each gene's expression and each module eigengene, providing a measure of module membership.
+
+kME_10000 <- signedKME(datExpr3_10000, MEs_10000, outputColumnName = "kME")
+
+# Convert KME results to a data frame and retain gene IDs from row names.
+kME_10000 <- as.data.frame(kME_10000)
+kME_10000$gene_id <- rownames(kME_10000)
+
+# Identify genes originally assigned to the brown module using their WGCNA assignments.
+brown_genes <- mergedColors_10000 %>%
+  dplyr::filter(colors == "brown") %>%
+  dplyr::pull(gene_id)
+
+# Retain the KME values for brown-module genes across all module eigengenes.
+brown_kME <- kME_10000 %>%
+  dplyr::filter(gene_id %in% brown_genes)
+
+# Reshape the KME table so that each row represents a gene-module combination.
+brown_kME_long <- brown_kME %>%
+  tidyr::pivot_longer(
+    cols = dplyr::starts_with("kME"),
+    names_to = "module",
+    values_to = "KME"
+  ) %>%
+  dplyr::mutate(
+    module = sub("^kME", "", module)
+  )
+
+# Rank module eigengenes for each gene based on signed KME, from highest to lowest.
+# Retain the three modules with the highest KME values for each gene.
+brown_top3_modules <- brown_kME_long %>%
+  dplyr::group_by(gene_id) %>%
+  dplyr::arrange(dplyr::desc(KME), .by_group = TRUE) %>%
+  dplyr::slice_head(n = 3) %>%
+  dplyr::mutate(rank = dplyr::row_number()) %>%
+  dplyr::ungroup()
+
+# Summarize the top three module assignments and their corresponding KME values for each brown-module gene. Include the original module assignment for reference.
+brown_top3_wide <- brown_top3_modules %>%
+  dplyr::select(gene_id, module, KME, rank) %>%
+  tidyr::pivot_wider(
+    names_from = rank,
+    values_from = c(module, KME),
+    names_glue = "{.value}_{rank}"
+  ) %>%
+  dplyr::rename(
+    top1_module = module_1,
+    top1_KME = KME_1,
+    top2_module = module_2,
+    top2_KME = KME_2,
+    top3_module = module_3,
+    top3_KME = KME_3
+  ) %>%
+  dplyr::mutate(
+    assigned_module = "brown"
+  ) %>%
+  dplyr::select(
+    gene_id,
+    assigned_module,
+    top1_module,
+    top1_KME,
+    top2_module,
+    top2_KME,
+    top3_module,
+    top3_KME
+  )
+
+# View the table
+brown_top3_wide
+
+# Rank all module eigengenes by KME for each brown-module gene.
+brown_kme_ranked <- brown_kME_long %>%
+  dplyr::group_by(gene_id) %>%
+  dplyr::arrange(dplyr::desc(KME), .by_group = TRUE) %>%
+  dplyr::mutate(
+    kME_rank = dplyr::row_number()
+  ) %>%
+  dplyr::ungroup()
+
+# Reassign brown genes:
+# If brown is NOT ranked first, assign the gene to the highest-KME module.
+# If brown IS ranked first, assign the gene to the second-highest-KME module.
+
+brown_reassigned <- brown_kme_ranked %>%
+  dplyr::group_by(gene_id) %>%
+  dplyr::summarise(
+    original_module = "brown",
+    original_brown_KME = KME[module == "brown"],
+    highest_KME_module = module[kME_rank == 1],
+    highest_KME = KME[kME_rank == 1],
+    second_KME_module = module[kME_rank == 2],
+    second_KME = KME[kME_rank == 2],
+    .groups = "drop"
+  ) %>%
+  dplyr::mutate(
+    new_module = dplyr::if_else(
+      highest_KME_module == "brown",
+      second_KME_module,
+      highest_KME_module
+    ),
+    new_KME = dplyr::if_else(
+      highest_KME_module == "brown",
+      second_KME,
+      highest_KME
+    )
+  )
+
+# Create a new module-assignment table based on the KME reassignment
+# Retain the original WGCNA module assignments for all genes.
+# Replace the assignments of brown-module genes with their newly assigned modules.
+kME_colors_10000 <- mergedColors_10000
+
+kME_colors_10000 <- kME_colors_10000 %>%
+  dplyr::left_join(
+    brown_reassigned %>%
+      dplyr::select(gene_id, new_module),
+    by = "gene_id"
+  ) %>%
+  dplyr::mutate(
+    colors = dplyr::if_else(
+      !is.na(new_module),
+      new_module,
+      colors
+    )
+  ) %>%
+  dplyr::select(gene_id, colors)
+
+# Check the newly formed module sizes
+table(kME_colors_10000$colors)
 
 
 # Compute module eigengenes
@@ -536,32 +667,65 @@ mME <- left_join(
 )
 
 
-
-# Module eigengene dendrogram 
-
-# Compute module eigengenes
+# Recalculate module eigengenes using the kME-based module assignments, which redistribute genes originally assigned to the brown module.
 MElist_10000 <- moduleEigengenes(
   datExpr3_10000,
-  mergedColors_10000$colors
+  colors = kME_colors_10000$colors
 )
 
+# Order module eigengenes
 MEs_10000 <- orderMEs(
   MElist_10000$eigengenes
 )
 
-# Compute dissimilarity of module eigengenes
+# Extract module names and remove the "ME" prefix for plotting and labeling.
+module_order <- gsub("^ME", "", names(MEs_10000))
+
+# Add sample names to the eigengene data.
+MEs_10000$sample <- rownames(MEs_10000)
+
+# Convert module eigengene values from wide to long format.
+# Each row represents one sample and one module eigengene.
+mME <- MEs_10000 %>%
+  tidyr::pivot_longer(
+    -sample,
+    names_to = "name",
+    values_to = "value"
+  ) %>%
+  dplyr::mutate(
+    name = gsub("^ME", "", name),
+    name = factor(
+      name,
+      levels = module_order
+    )
+  )
+
+
+# Add sample metadata (the experimental information (treatment, haplotype, and pair)
+# to each sample's module eigengene values.
+colData$sample <- rownames(colData)
+
+mME <- dplyr::left_join(
+  mME,
+  colData,
+  by = "sample"
+)
+
+
+# Calculate dissimilarity between module eigengenes using Pearson correlation.
+# A dissimilarity value of 1 - correlation is used for hierarchical clustering.
 ME.dissimilarity_10000 <- 1 - cor(
-  MEs_10000,
+  MEs_10000 %>% dplyr::select(-sample),
   use = "pairwise.complete.obs"
 )
 
-# Hierarchical clustering of module eigengenes
+# Perform hierarchical clustering of module eigengenes using average linkage.
 METree_10000 <- hclust(
   as.dist(ME.dissimilarity_10000),
   method = "average"
 )
 
-# Plot eigengene dendrogram
+# Plot the module eigengene dendrogram.
 par(mfrow = c(1, 1))
 par(mar = c(0, 4, 2, 0))
 
@@ -569,13 +733,17 @@ par(cex = 0.85)
 par(cex.main = 0.85)
 par(cex.axis = 0.85)
 
-plot(METree_10000, main = "0.25 Merge Cutoff Clustering of Module Eigengenes",xlab = "",sub = "",cex = 0.85)
+plot(
+  METree_10000,
+  main = "0.25 Merge Cutoff Clustering of Module Eigengenes",
+  xlab = "",
+  sub = "",
+  cex = 0.85
+)
 
 
-
-
-#To plot line graph showing the expression pattern difference accross treatments:
-
+# Plot module eigengene expression patterns across radiation treatment
+# Display mean module eigengene values at each treatment, separated by haplotype and pair.
 ggplot(
   mME,
   aes(
@@ -607,8 +775,153 @@ ggplot(
   ) +
   theme_bw() +
   labs(
-    x = "Time", #Time and treatment used interchangeably
+    x = "Time",
     y = "Module Eigengene",
-    color = "Allele", #Allele and haplotype used interchangeably
-    shape = "Background" #Background and pair used interchangeably
+    color = "Allele",
+    shape = "Background"
   )
+
+# LIMMA (Linear Models for Microarray Data) was used to fit linear models to module eigengene expression across samples. Empirical Bayes moderation was applied to improve variance estimation, and individual model coefficients were extracted to evaluate the effects of genetic background (pair), allele (haplotype), treatment time (treatment), and their interactions on module eigengene expression.
+# Confirm that sample order matches between module eigengenes and metadata.
+all.equal(
+  rownames(colData),
+  rownames(MEs_10000)
+)
+
+# Retain only module eigengene values for limma analysis.
+module_eigengenes <- dplyr::select(
+  MEs_10000,
+  -sample
+)
+
+
+# LIMMA MODEL
+# Fit a full factorial model to evaluate the effects of genetic background (pair), allele (haplotype), and radiation treatment time (treatment) on module eigengene expression.
+# Include all pairwise interactions between the three experimental factors.
+
+des_mat <- model.matrix(
+  ~ Background +
+    Allele +
+    Time +
+    Background:Allele +
+    Background:Time +
+    Allele:Time,
+  data = colData
+)
+
+
+# Fit a linear model for each module eigengene.
+# Modules are rows and samples are columns, as required by lmFit().
+fit <- limma::lmFit(
+  t(module_eigengenes),
+  design = des_mat
+)
+
+
+# Apply empirical Bayes moderation to improve variance estimation across module eigengene expression profiles.
+fit <- limma::eBayes(fit)
+
+# Check coefficient names in the fitted model.
+colnames(coef(fit))
+
+# Extract results for individual model coefficients.
+# Each result includes the estimated effect, moderated test statistic, raw P value, and Benjamini-Hochberg adjusted P value.
+# Background (pair)
+background <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 2 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+background
+
+# Evaluate interaction terms in the full model.
+# Remove the Allele x Time interaction because it was not statistically significant.
+
+# Refit the model without the Allele x Time interaction.
+des_mat <- model.matrix(
+  ~ Background +
+    Allele +
+    Time +
+    Background:Allele +
+    Background:Time,
+  data = colData
+)
+
+# Evaluate the remaining interaction terms.
+# Remove the Background x Time interaction because it was not statistically significant.
+
+# Refit the model without the Background x Time interaction to have final model:
+des_mat <- model.matrix(
+  ~ Background +
+    Allele +
+    Time +
+    Background:Allele,
+  data = colData
+)
+
+# Fit a linear model for each module eigengene.
+# Modules are rows and samples are columns, as required by lmFit().
+fit <- limma::lmFit(
+  t(module_eigengenes),
+  design = des_mat
+)
+
+
+# Apply empirical Bayes moderation to improve variance estimation across module eigengene expression profiles.
+fit <- limma::eBayes(fit)
+
+# Check coefficient names in the fitted model.
+colnames(coef(fit))
+
+# Extract results for individual model coefficients from the final model.
+background <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 2 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+
+
+Allele <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 3 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+Time1 <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 4 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+Time4 <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 5 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
+Allelexbackground <- limma::topTable(
+  fit,
+  number = ncol(module_eigengenes),
+  coef = 6 #change this according to term of interest and corresponding coefficient from colnames(coef(fit))
+) %>%
+  tibble::rownames_to_column(
+    "module"
+  )
+
